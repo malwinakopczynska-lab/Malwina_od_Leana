@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapowanie Procesów — VSM, Makigami, BPMN</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1B0040;
+    --primary-mid: #2E006B;
+    --primary-light: #3D0090;
+    --accent: #D4006A;
+    --accent-light: #FF1A80;
+    --accent-pale: #FFE0F0;
+    --cream: #FAF7FF;
+    --cream-dark: #EDE0FF;
+    --text: #1B0040;
+    --text-mid: #4A2080;
+    --text-muted: #8A6AAA;
+    --border: rgba(60,0,100,0.12);
+    --border-strong: rgba(60,0,100,0.22);
+    --white: #FFFFFF;
+    --success: #1A4899;
+    --success-bg: #E0ECFF;
+    --danger: #991B1B;
+    --danger-bg: #FEE2E2;
+    --warn: #92400E;
+    --warn-bg: #FEF3C7;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 12px rgba(60,0,100,0.08);
+    --shadow-md: 0 4px 24px rgba(60,0,100,0.12);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(90deg, #1B0040 0%, #2D0060 100%);
+    color: var(--white);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--accent);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span { color: var(--accent); }
+
+  nav { display: flex; gap: 4px; }
+  nav button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.65);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  nav button:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+  nav button.active { color: var(--white); background: var(--accent); }
+  nav button:hover { color: var(--white); background: rgba(212,0,106,0.25); }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #1B0040 0%, #2D0060 50%, #1A0050 100%);
+    color: var(--white);
+    padding: 64px 2rem 72px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-inner { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+  .avatar-ring {
+    width: 110px; height: 110px; border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #D4006A, #1A4899, #D4006A);
+    margin: 0 auto 24px;
+    box-shadow: 0 0 32px rgba(212,0,106,0.4);
+  }
+  .avatar-img {
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; object-position: center top;
+    border: 3px solid #1B0040; display: block;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--white);
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 100px; margin-bottom: 24px;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 6vw, 54px); font-weight: 800;
+    line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 24px;
+  }
+  .hero h1 em { color: #FF4DAC; font-style: normal; }
+  .hero p {
+    font-size: 17px; color: rgba(255,255,255,0.72);
+    max-width: 560px; margin: 0 auto 36px; line-height: 1.6;
+  }
+  .hero-question {
+    display: inline-block;
+    border: 1.5px solid rgba(212,0,106,0.5);
+    background: rgba(212,0,106,0.1);
+    border-radius: 100px; padding: 12px 28px;
+    font-size: 16px; font-style: italic; color: rgba(255,255,255,0.92);
+  }
+
+  /* MAIN LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+  .tab-panel { display: none; padding: 48px 0 80px; }
+  .tab-panel.active { display: block; }
+
+  /* SECTION HEADERS */
+  .section-label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  h2.section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: #1B0040;
+    margin-bottom: 16px;
+  }
+  .section-intro {
+    font-size: 17px;
+    color: var(--text-mid);
+    max-width: 660px;
+    margin-bottom: 48px;
+    line-height: 1.65;
+  }
+
+  /* METHOD CARDS */
+  .methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 56px;
+  }
+  .method-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .method-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .method-card-top {
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .method-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 100px;
+    margin-bottom: 14px;
+  }
+  .tag-vsm { background: #E0ECFF; color: #1A4899; }
+  .tag-maki { background: #FFE0F0; color: #D4006A; }
+  .tag-bpmn { background: #E0EEFF; color: #1A4899; }
+
+  .method-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    color: #1B0040;
+  }
+  .method-card .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .method-card-body { padding: 24px 28px; }
+  .method-card-body p { font-size: 15px; color: var(--text-mid); margin-bottom: 16px; line-height: 1.65; }
+  .method-question {
+    background: var(--cream);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1B0040;
+    margin-bottom: 20px;
+  }
+  .method-card-footer {
+    padding: 0 28px 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    font-size: 12px;
+    background: var(--cream-dark);
+    color: var(--text-mid);
+    padding: 4px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+  }
+  .pill.yes { background: var(--success-bg); color: var(--success); border-color: transparent; }
+  .pill.no { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+
+  /* COMPARISON TABLE */
+  .compare-section { margin-bottom: 56px; }
+  .compare-table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--white); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead { background: linear-gradient(135deg, #1B0040, #2D0060); color: var(--white); }
+  thead th {
+    padding: 16px 20px;
+    text-align: left;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  thead th:first-child { border-radius: var(--radius) 0 0 0; }
+  thead th:last-child { border-radius: 0 var(--radius) 0 0; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--cream); }
+  tbody td { padding: 14px 20px; color: var(--text-mid); vertical-align: top; }
+  tbody td:first-child { font-weight: 500; color: #1B0040; font-size: 13px; }
+  .check { color: #16a34a; font-weight: 700; }
+  .cross { color: #dc2626; font-weight: 700; }
+  .partial { color: #d97706; font-weight: 700; }
+
+  /* KNOWLEDGE SECTION */
+  .knowledge-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 720px) { .knowledge-grid { grid-template-columns: 1fr; } }
+
+  .k-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+  .k-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1B0040;
+    margin-bottom: 6px;
+  }
+  .k-card .k-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .k-card p { font-size: 14px; color: var(--text-mid); line-height: 1.6; margin-bottom: 12px; }
+  .k-card p:last-child { margin-bottom: 0; }
+  .k-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+  }
+  .kb-vsm { background: #E0ECFF; color: #1A4899; }
+  .kb-maki { background: #FFE0F0; color: #D4006A; }
+  .kb-bpmn { background: #E0EEFF; color: #1A4899; }
+  .kb-lean { background: #F3E8FF; color: #581C87; }
+  .kb-all { background: var(--cream-dark); color: var(--text-mid); }
+
+  /* ERRORS SECTION */
+  .errors-intro {
+    background: linear-gradient(135deg, #1B0040, #2D0060);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    margin-bottom: 36px;
+  }
+  .errors-intro h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--accent);
+  }
+  .errors-intro p { color: rgba(255,255,255,0.8); font-size: 15px; }
+
+  .errors-filter {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: var(--white); }
+
+  .errors-list { display: flex; flex-direction: column; gap: 16px; }
+  .error-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    border-left: 4px solid var(--accent);
+    transition: box-shadow 0.2s;
+  }
+  .error-item:hover { box-shadow: var(--shadow); }
+  .error-item.hidden { display: none; }
+  .error-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .error-item h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1B0040;
+    flex: 1;
+  }
+  .error-tags { display: flex; gap: 6px; flex-shrink: 0; }
+  .error-item p { font-size: 14px; color: var(--text-mid); line-height: 1.65; margin-bottom: 12px; }
+  .tip-box {
+    background: #FFE8F3;
+    border: 1px solid #FFB3D9;
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #990050;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .tip-box strong { font-weight: 600; }
+
+  /* TIPS SECTION */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 48px;
+  }
+  .tip-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .tip-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--cream-dark);
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .tip-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1B0040;
+    margin-bottom: 10px;
+  }
+  .tip-card p { font-size: 14px; color: var(--text-mid); line-height: 1.6; }
+
+  /* LIBRARY SECTION */
+  .lib-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0;
+  }
+  .lib-tab {
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 10px 20px;
+    cursor: pointer;
+    position: relative;
+    bottom: -2px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .lib-tab:hover { color: #1B0040; }
+  .lib-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .lib-panel { display: none; }
+  .lib-panel.active { display: block; }
+
+  .ref-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 20px 24px;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s;
+  }
+  .ref-item:hover { box-shadow: var(--shadow); }
+  .ref-item .ref-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1B0040;
+    margin-bottom: 4px;
+  }
+  .ref-item .ref-authors {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .ref-item .ref-desc { font-size: 13px; color: var(--text-mid); line-height: 1.6; margin-bottom: 10px; }
+  .ref-item .ref-doi {
+    font-size: 11px;
+    font-family: monospace;
+    color: #D4006A;
+    background: #FFE0F0;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .ref-type {
+    float: right;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .rt-book { background: #EDE0FF; color: #3D0090; }
+  .rt-article { background: #FFE0F0; color: #D4006A; }
+  .rt-standard { background: #E0EEFF; color: #1A4899; }
+
+  /* FAQ SECTION */
+  .faq-list { max-width: 760px; }
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 22px 0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: #1B0040;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    transition: color 0.2s;
+  }
+  .faq-q:hover { color: var(--accent); }
+  .faq-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 400;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    color: var(--text-muted);
+  }
+  .faq-item.open .faq-icon { background: var(--accent); border-color: var(--accent); color: var(--white); transform: rotate(45deg); }
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, padding 0.2s;
+  }
+  .faq-item.open .faq-a { max-height: 600px; padding-bottom: 24px; }
+  .faq-a p { font-size: 15px; color: var(--text-mid); line-height: 1.7; margin-bottom: 12px; }
+  .faq-a p:last-child { margin-bottom: 0; }
+  .faq-a .source { font-size: 12px; color: var(--text-muted); font-style: italic; margin-top: 8px; }
+
+  /* FOOTER */
+  footer {
+    background: linear-gradient(135deg, #1B0040, #2D0060);
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 40px 2rem;
+    font-size: 13px;
+    margin-top: 80px;
+  }
+  footer strong { color: rgba(255,255,255,0.85); }
+
+  /* RESPONSIVE */
+  @media (max-width: 700px) {
+    .header-inner { flex-direction: column; gap: 8px; height: auto; padding: 12px 1rem; }
+    nav { flex-wrap: wrap; justify-content: center; }
+    .hero { padding: 48px 1.5rem 40px; }
+    main { padding: 0 1.25rem; }
+    .knowledge-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo">Malwina<span>doLean</span></a>
+    <nav>
+      <button class="active" onclick="showTab('metody', this)">Metody</button>
+      <button onclick="showTab('bledy', this)">Błędy i ryzyka</button>
+      <button onclick="showTab('wskazowki', this)">Wskazówki</button>
+      <button onclick="showTab('biblioteka', this)">Biblioteka</button>
+      <button onclick="showTab('faq', this)">FAQ</button>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="avatar-ring">
+      <img src="data:image/jpeg;base64,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" alt="Malwina do Lean" class="avatar-img">
+    </div>
+    <div class="hero-tag">Przewodnik praktyka Lean</div>
+    <h1>Mapowanie procesów<br>to nie <em>cel</em>.<br>To środek do zmiany.</h1>
+    <p>VSM, Makigami i BPMN to trzy różne narzędzia — dla trzech różnych pytań. Używanie jednego do wszystkiego produkuje jeden wynik: pięknie opisany chaos.</p>
+    <div class="hero-question">„Po co robimy tę mapę i co z nią zrobimy?"</div>
+  </div>
+</section>
+
+<main>
+
+<!-- ======== TAB: METODY ======== -->
+<div class="tab-panel active" id="tab-metody">
+  <span class="section-label">Trzy metody — trzy pytania</span>
+  <h2 class="section-title">Zanim sięgniesz po narzędzie,<br>zadaj właściwe pytanie</h2>
+  <p class="section-intro">Każda z trzech metod odpowiada na inne pytanie diagnostyczne. Nie są zamienne — są komplementarne. Błędny dobór narzędzia to nie błąd techniczny — to błąd myślenia o problemie.</p>
+
+  <div class="methods-grid">
+    <!-- VSM -->
+    <div class="method-card">
+      <div class="method-card-top">
+        <div class="method-tag tag-vsm">VSM / VSD</div>
+        <h3>Value Stream Mapping</h3>
+        <div class="subtitle">Lean Manufacturing · Toyota Production System</div>
+      </div>
+      <div class="method-card-body">
+        <div class="method-question">Gdzie w przepływie ginie czas i wartość?</div>
+        <p>VSM wizualizuje cały strumień wartości — od surowca lub zamówienia do klienta. Pokazuje jednocześnie przepływ materiałów i przepływ informacji z ilościowymi danymi: takt time, cycle time, lead time, WIP.</p>
+        <p>To jedyne narzędzie które ujawnia proporcję wartości dodanej do całkowitego czasu lead time. W typowych firmach wynosi ona 5–35%. Reszta to oczekiwanie, transport i przeróbki — niewidoczne bez VSM.</p>
+        <p><strong>Kluczowe metryki:</strong> Takt time (rytm popytu klienta) · Cycle time (czas wykonania) · Lead time (czas całkowity) · Value-added ratio · WIP</p>
+      </div>
+      <div class="method-card-footer">
+        <span class="pill yes">Produkcja seryjna</span>
+        <span class="pill yes">Logistyka</span>
+        <span class="pill yes">Usługi operacyjne</span>
+        <span class="pill no">Praca biurowa</span>
+        <span class="pill no">Procesy kreatywne</span>
+      </div>
+    </div>
+
+    <!-- MAKIGAMI -->
+    <div class="method-card">
+      <div class="method-card-top">
+        <div class="method-tag tag-maki">Makigami</div>
+        <h3>Mapa procesów biurowych</h3>
+        <div class="subtitle">Lean Office · Business Process Reengineering</div>
+      </div>
+      <div class="method-card-body">
+        <div class="method-question">Gdzie między ludźmi giną dokumenty i decyzje?</div>
+        <p>Makigami śledzi przepływ informacji, dokumentów i decyzji między rolami organizacyjnymi. Każda rola to osobny tor (swimlane). Mapa rysowana jest w osi czasu z wyraźnym zaznaczeniem handoffs i czasu oczekiwania.</p>
+        <p>Ujawnia marnotrawstwo niewidoczne gołym okiem: dokumenty leżące w skrzynce, zadania czekające na podpis, praca stojąca w niczyim zadaniu między działami.</p>
+        <p><strong>Kluczowe metryki:</strong> Czas przetwarzania · Czas oczekiwania między rolami · Liczba handoffs · Liczba osób dotykaących dokumentu · Dystans informacji</p>
+      </div>
+      <div class="method-card-footer">
+        <span class="pill yes">HR i finanse</span>
+        <span class="pill yes">Obiegi dokumentów</span>
+        <span class="pill yes">Back-office</span>
+        <span class="pill no">Produkcja fizyczna</span>
+        <span class="pill no">Automatyzacja IT</span>
+      </div>
+    </div>
+
+    <!-- BPMN -->
+    <div class="method-card">
+      <div class="method-card-top">
+        <div class="method-tag tag-bpmn">BPMN 2.0</div>
+        <h3>Business Process Model and Notation</h3>
+        <div class="subtitle">ISO/IEC 19510:2013 · Object Management Group</div>
+      </div>
+      <div class="method-card-body">
+        <div class="method-question">Jak opisać logikę procesu dla systemu lub automatyzacji?</div>
+        <p>BPMN to standaryzowany język graficzny do modelowania logiki procesu. Opisuje sekwencję zdarzeń, czynności, bramek decyzyjnych i przepływów. Jest wykonywalny — modele BPMN mogą być interpretowane przez silniki procesów (BPMS).</p>
+        <p>Kluczowa właściwość: BPMN modeluje <em>co ma się stać i w jakiej kolejności</em> — nie diagnozuje marnotrawstwa, nie mierzy czasu oczekiwania, nie ujawnia proporcji wartości dodanej. To projekt architektoniczny — nie diagnoza.</p>
+        <p><strong>BPMN ≠ automatyzacja.</strong> Mapa BPMN to punkt startowy — nie wynik.</p>
+      </div>
+      <div class="method-card-footer">
+        <span class="pill yes">Wdrożenia IT / ERP</span>
+        <span class="pill yes">Automatyzacja RPA</span>
+        <span class="pill yes">Compliance</span>
+        <span class="pill no">Diagnoza marnotrawstwa</span>
+        <span class="pill no">Procesy fizyczne</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA PORÓWNAWCZA -->
+  <div class="compare-section">
+    <span class="section-label">Porównanie</span>
+    <h2 class="section-title" style="font-size:24px; margin-bottom:24px;">Które narzędzie — do jakiego problemu</h2>
+    <div class="compare-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Kryterium</th>
+            <th>VSM</th>
+            <th>Makigami</th>
+            <th>BPMN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Główne pytanie</td><td>Gdzie ginie wartość w przepływie?</td><td>Gdzie giną dokumenty i decyzje?</td><td>Jak opisać logikę dla systemu?</td></tr>
+          <tr><td>Środowisko</td><td>Produkcja, logistyka</td><td>Biuro, administracja</td><td>IT, automatyzacja, compliance</td></tr>
+          <tr><td>Mierzy marnotrawstwo</td><td class="check">Tak</td><td class="check">Tak</td><td class="cross">Nie</td></tr>
+          <tr><td>Mierzy takt/cycle time</td><td class="check">Tak</td><td class="partial">Częściowo</td><td class="cross">Nie</td></tr>
+          <tr><td>Wizualizuje handoffs</td><td class="partial">Częściowo</td><td class="check">Tak</td><td class="check">Tak</td></tr>
+          <tr><td>Nadaje się do automatyzacji</td><td class="cross">Nie</td><td class="cross">Nie</td><td class="check">Tak</td></tr>
+          <tr><td>Tworzony z zespołem (Gemba)</td><td class="check">Tak — wymagane</td><td class="check">Tak — wymagane</td><td class="partial">Opcjonalnie</td></tr>
+          <tr><td>Wykonywalny przez BPMS</td><td class="cross">Nie</td><td class="cross">Nie</td><td class="check">Tak</td></tr>
+          <tr><td>Wymaga szkoleń technicznych</td><td class="partial">Podstawowych</td><td class="partial">Podstawowych</td><td class="check">Zaawansowanych</td></tr>
+          <tr><td>Standard ISO</td><td class="cross">Nie</td><td class="cross">Nie</td><td class="check">ISO/IEC 19510</td></tr>
+          <tr><td>Prawidłowa sekwencja</td><td>Krok 1</td><td>Krok 1</td><td>Krok 2 (po diagnozie)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SEKWENCJA -->
+  <div style="background: linear-gradient(135deg, #1B0040, #2D0060); border-radius: var(--radius); padding: 36px 40px; color: var(--white);">
+    <span class="section-label" style="color: var(--accent);">Złota zasada</span>
+    <h3 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 16px; margin-top: 8px;">Właściwa sekwencja ma znaczenie</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 24px;">
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">1</div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Zdiagnozuj problem</div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.6);">VSM lub Makigami — zrozum gdzie i dlaczego jest problem</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">2</div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Zaprojektuj rozwiązanie</div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.6);">BPMN — opisz logikę procesu docelowego dla systemu</div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <div style="background: var(--accent); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0;">3</div>
+        <div>
+          <div style="font-weight: 600; margin-bottom: 4px;">Wdrażaj i mierz</div>
+          <div style="font-size: 13px; color: rgba(255,255,255,0.6);">Weryfikuj wyniki mapami stanu docelowego — nie dokumentami</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.12); font-size: 14px; color: rgba(255,255,255,0.65); font-style: italic;">
+      Źródło: Costa, Ávila (2025), Management and Production Engineering Review, DOI: 10.24425/mper.2025.157212
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB: BŁĘDY ======== -->
+<div class="tab-panel" id="tab-bledy">
+  <span class="section-label">Błędy i ryzyka</span>
+  <h2 class="section-title">Najczęstsze błędy w mapowaniu procesów</h2>
+  <p class="section-intro">Błędy w mapowaniu procesów rzadko są techniczne. Najczęściej wynikają z wyboru złego narzędzia do złego pytania, pominięcia obserwacji rzeczywistości lub potraktowania mapy jako celu zamiast środka.</p>
+
+  <div class="errors-intro">
+    <h3>Kluczowy błąd systemowy</h3>
+    <p>Firmy używają BPMN do diagnozy marnotrawstwa — bo BPMN jest modne i wygląda profesjonalnie. To jak mierzenie temperatury linijką. Narzędzie działa. Wynik jest bez sensu. Chaos opisany precyzyjnie to nadal chaos. Automatyzowanie procesu pełnego marnotrawstwa daje jeden wynik: szybszy zły wynik.</p>
+  </div>
+
+  <div class="errors-filter">
+    <button class="filter-btn active" onclick="filterErrors('all', this)">Wszystkie</button>
+    <button class="filter-btn" onclick="filterErrors('vsm', this)">VSM</button>
+    <button class="filter-btn" onclick="filterErrors('maki', this)">Makigami</button>
+    <button class="filter-btn" onclick="filterErrors('bpmn', this)">BPMN</button>
+    <button class="filter-btn" onclick="filterErrors('ogolne', this)">Ogólne</button>
+  </div>
+
+  <div class="errors-list">
+
+    <div class="error-item" data-tags="ogolne">
+      <div class="error-header">
+        <h4>Nie zadano pytania: po co robimy tę mapę?</h4>
+        <div class="error-tags"><span class="k-badge kb-all">Ogólne</span></div>
+      </div>
+      <p>Bez jasnej odpowiedzi na pytanie o cel mapy — każde narzędzie produkuje pięknie opisany chaos. Mapa staje się celem samym w sobie zamiast środkiem do zrozumienia i zmiany.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Zanim zaczniesz rysować — zapisz jednym zdaniem co chcesz zobaczyć i co zrobisz z tym co zobaczysz. Jeśli nie możesz — zatrzymaj projekt.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Negrão et al. (2017), Production Planning & Control, DOI: 10.1080/09537287.2016.1231853</p>
+    </div>
+
+    <div class="error-item" data-tags="ogolne">
+      <div class="error-header">
+        <h4>Mapa tworzona przy biurku bez Gemba Walk</h4>
+        <div class="error-tags"><span class="k-badge kb-all">Ogólne</span></div>
+      </div>
+      <p>Menedżerowie opisują jak proces powinien działać. Pracownicy wiedzą jak działa naprawdę. Mapa bez obserwacji na miejscu (Gemba) i bez udziału osób wykonujących pracę odzwierciedla wyobrażenia — nie rzeczywistość.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Idź na halę lub do biura. Obserwuj. Mierz. Rozmawiaj z operatorami. Mapa powstaje na miejscu procesu — nie w sali konferencyjnej.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Maware et al. (2022), Int. Journal of Lean Six Sigma, DOI: 10.1108/IJLSS-12-2020-0223</p>
+    </div>
+
+    <div class="error-item" data-tags="ogolne">
+      <div class="error-header">
+        <h4>Mapa jako jednorazowy dokument — „wall art VSM"</h4>
+        <div class="error-tags"><span class="k-badge kb-all">Ogólne</span></div>
+      </div>
+      <p>Mapa narysowana raz, wywieszona na ścianie i nigdy nieaktualizowana to dekoracja — nie narzędzie doskonalenia. Mapowanie ma sens tylko wtedy gdy kończy się zmianą, a nie dokumentem.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Do każdej mapy dołącz plan działania (improvement plan) z właścicielami, terminami i miarami sukcesu. Mapuj ponownie po wdrożeniu zmian.</div>
+    </div>
+
+    <div class="error-item" data-tags="vsm">
+      <div class="error-header">
+        <h4>VSM: mylenie takt time z cycle time</h4>
+        <div class="error-tags"><span class="k-badge kb-vsm">VSM</span></div>
+      </div>
+      <p>Takt time pochodzi od klienta — jest miarą popytu (dostępny czas pracy / popyt klienta). Cycle time pochodzi z procesu — jest miarą wydajności. Projektowanie future state na podstawie pomyłki tych dwóch wartości prowadzi do wadliwych decyzji o alokacji zasobów i błędnej identyfikacji wąskich gardeł.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Zawsze oblicz takt time jako pierwszy krok — zanim zmierzysz cycle times. Pytanie brzmi: jak szybko musi pracować proces żeby spełnić popyt klienta?</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Rother, Shook (1998), Learning to See, Lean Enterprise Institute</p>
+    </div>
+
+    <div class="error-item" data-tags="vsm">
+      <div class="error-header">
+        <h4>VSM: mapowanie procesu zamiast strumienia wartości</h4>
+        <div class="error-tags"><span class="k-badge kb-vsm">VSM</span></div>
+      </div>
+      <p>VSM bez klienta na początku i bez dostawcy na końcu nie jest VSM — jest schematem blokowym z dodatkowymi symbolami. Strumień wartości musi być mapowany end-to-end: od dostawcy surowca do momentu odbioru przez klienta. Mapowanie tylko jednego działu lub jednej stacji daje lokalny obraz — i może prowadzić do lokalnej optymalizacji kosztem całości.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Zacznij od produktu lub rodziny produktów — nie od działu. Rysuj od klienta wstecz.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Dal Forno et al. (2014), Int. Journal of Advanced Manufacturing Technology, DOI: 10.1007/s00170-014-5712-z</p>
+    </div>
+
+    <div class="error-item" data-tags="vsm">
+      <div class="error-header">
+        <h4>VSM: brak danych ilościowych w data boxes</h4>
+        <div class="error-tags"><span class="k-badge kb-vsm">VSM</span></div>
+      </div>
+      <p>VSM bez wypełnionych pól danych (cycle time, uptime, liczba operatorów, WIP, czas przezbrojenia) to rysunek — nie analiza. Wartość VSM tkwi w liczbach, nie w estetyce diagramu. Mapa bez danych nie pozwala porównać stanu obecnego ze stanem docelowym.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Mierz — nie szacuj. Każda stacja musi mieć zmierzone dane. Pomiary robione przez samych operatorów są często bardziej wiarygodne niż obserwacje zewnętrzne.</div>
+    </div>
+
+    <div class="error-item" data-tags="maki">
+      <div class="error-header">
+        <h4>Makigami: pomijanie czasu oczekiwania</h4>
+        <div class="error-tags"><span class="k-badge kb-maki">Makigami</span></div>
+      </div>
+      <p>Najcenniejszą informacją w Makigami jest czas między czynnościami — nie czas samych czynności. Mapy które pokazują tylko kroki bez czasów oczekiwania nie ujawniają marnotrawstwa. W środowiskach biurowych to właśnie czas oczekiwania między handoffs jest dominującą kategorią strat.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Dla każdego przekazania (handoff) zmierz czas od momentu wysłania do momentu przyjęcia przez kolejną osobę. To jest Twoje marnotrawstwo.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Camuffo, Gerli (2021), Total Quality Management & Business Excellence, DOI: 10.1080/14783363.2020.1807927</p>
+    </div>
+
+    <div class="error-item" data-tags="maki">
+      <div class="error-header">
+        <h4>Makigami: mapowanie procesu "jak powinno być" — nie "jak jest"</h4>
+        <div class="error-tags"><span class="k-badge kb-maki">Makigami</span></div>
+      </div>
+      <p>Makigami musi odzwierciedlać rzeczywistość — nie procedurę z instrukcji ani opis jaki menedżer chciałby widzieć. Rzeczywiste obiegi dokumentów często znacząco odbiegają od formalnych procedur. Mapowanie "jak być powinno" zamiast "jak jest" uniemożliwia identyfikację rzeczywistych przyczyn problemów.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Śledź jeden realny dokument (fakturę, wniosek, formularz) przez cały proces. Fotografuj, notuj, rozmawiaj z każdą osobą która go dotyknęła.</div>
+    </div>
+
+    <div class="error-item" data-tags="bpmn">
+      <div class="error-header">
+        <h4>BPMN: używanie zamiast VSM/Makigami do diagnozy marnotrawstwa</h4>
+        <div class="error-tags"><span class="k-badge kb-bpmn">BPMN</span></div>
+      </div>
+      <p>BPMN nie pokazuje marnotrawstwa. Nie mierzy czasu oczekiwania. Nie ujawnia proporcji wartości dodanej. Diagram BPMN as-is jest opisem procesu — nie diagnozą jego problemów. Firmy które używają BPMN do "analizy procesów" przed wdrożeniem systemu opisują problemy — nie rozwiązują ich.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> BPMN stosuj dopiero gdy rozumiesz proces i wiesz co chcesz zmienić. Najpierw VSM lub Makigami — potem BPMN dla stanu docelowego.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Soliman et al. (2022), Knowledge and Process Management, DOI: 10.1002/kpm.1729</p>
+    </div>
+
+    <div class="error-item" data-tags="bpmn">
+      <div class="error-header">
+        <h4>BPMN: mapa as-is jako podstawa automatyzacji</h4>
+        <div class="error-tags"><span class="k-badge kb-bpmn">BPMN</span></div>
+      </div>
+      <p>Automatyzowanie procesu który nie jest zoptymalizowany daje szybszy zły wynik. Firmy modelują obecny stan procesu (as-is) w BPMN i na tej podstawie wdrażają automatyzację — digitalizując marnotrawstwo, silosy i błędy zamiast je eliminować. Systemy ERP wdrożone bez wcześniejszej diagnozy i optymalizacji są jednym z najczęstszych powodów nieudanych wdrożeń IT.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> BPMN as-is jest użyteczny jako punkt wyjścia do dyskusji — ale nigdy jako specyfikacja dla automatyzacji. BPMN to-be musi opisywać proces po eliminacji marnotrawstwa.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Costa, Ávila (2025), Management and Production Engineering Review, DOI: 10.24425/mper.2025.157212</p>
+    </div>
+
+    <div class="error-item" data-tags="bpmn">
+      <div class="error-header">
+        <h4>BPMN: nadmierna złożoność modeli — błędy syntaktyczne i semantyczne</h4>
+        <div class="error-tags"><span class="k-badge kb-bpmn">BPMN</span></div>
+      </div>
+      <p>Analiza 2000+ modeli BPMN przez Rozman et al. (2007) zidentyfikowała 15 najczęstszych antywzorców. Literatura raportuje 10–20% wskaźnik błędów w przemysłowych kolekcjach modeli. Błędne bramki prowadzą do deadlocks i nieosiągalnych ścieżek — model wygląda poprawnie, ale opisuje proces który nie może zostać wykonany.</p>
+      <div class="tip-box"><strong>Wskazówka:</strong> Każdy model BPMN wymaga walidacji behawioralnej — nie tylko formalnej weryfikacji symboli. Użyj narzędzi do analizy behawioralnej przed wdrożeniem.</div>
+      <p style="margin-top:12px; font-size:12px; color:var(--text-muted);">Źródło: Rozman, Polančič, Horvat (2007), Proceedings ISD 2007, Springer · Mendling et al. (2010), DOI: 10.1016/j.infsof.2009.08.004</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======== TAB: WSKAZÓWKI ======== -->
+<div class="tab-panel" id="tab-wskazowki">
+  <span class="section-label">Jak mapować dobrze</span>
+  <h2 class="section-title">10 zasad dobrego mapowania procesów</h2>
+  <p class="section-intro">Dobre mapowanie procesów to dyscyplina obserwacji, pomiaru i myślenia — nie umiejętność rysowania ładnych diagramów. Poniższe zasady dotyczą wszystkich trzech metod.</p>
+
+  <div class="tips-grid">
+    <div class="tip-card">
+      <div class="tip-number">01</div>
+      <h4>Zacznij od pytania — nie od narzędzia</h4>
+      <p>Zapisz jednym zdaniem co chcesz zobaczyć i co zrobisz z wynikiem. Narzędzie wybierz po odpowiedzi — nie przed nią. Jeśli nie wiesz po co rysujesz — nie rysuj.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">02</div>
+      <h4>Idź na Gemba — obserwuj rzeczywistość</h4>
+      <p>Mapa musi odzwierciedlać to jak proces działa naprawdę — nie jak powinien działać według procedury. Gemba Walk (idź i obserwuj na miejscu) jest obowiązkowy dla VSM i Makigami.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">03</div>
+      <h4>Mierz — nie szacuj</h4>
+      <p>Każda cyfra na mapie musi być wynikiem pomiaru — nie szacunku ani domysłu. Cycle times, czasy oczekiwania, liczba handoffs — wszystko mierzone. Szacunki z sali konferencyjnej to nie dane.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">04</div>
+      <h4>Mapuj z ludźmi wykonującymi pracę</h4>
+      <p>Operatorzy, pracownicy administracyjni i osoby bezpośrednio wykonujące mapowany proces muszą uczestniczyć w tworzeniu mapy. Oni wiedzą jak proces działa naprawdę — i wiedzą gdzie są problemy.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">05</div>
+      <h4>Mapuj end-to-end — nie fragment</h4>
+      <p>Optymalizacja lokalnego fragmentu procesu może pogorszyć wyniki całości. VSM musi zawierać klienta i dostawcę. Makigami musi obejmować wszystkie role dotykaące dokumentu. Widok całości jest warunkiem sensownych wniosków.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">06</div>
+      <h4>Oceń wartość dodaną każdego kroku</h4>
+      <p>Dla każdej czynności zadaj pytanie: czy klient jest skłonny za to zapłacić? Czy zmienia to produkt lub usługę w sposób istotny dla klienta? Każda czynność która nie spełnia tych kryteriów to marnotrawstwo — konieczne lub możliwe do eliminacji.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">07</div>
+      <h4>Zmierz czas oczekiwania — nie tylko czas pracy</h4>
+      <p>W typowych procesach czas oczekiwania (między czynnościami, między rolami, w kolejkach) stanowi 65–95% całkowitego lead time. To tam ukrywa się marnotrawstwo — nie w czasie wykonania samych czynności.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">08</div>
+      <h4>Zaprojektuj stan docelowy — nie tylko opisz obecny</h4>
+      <p>Mapa stanu obecnego (as-is) bez mapy stanu docelowego (to-be) jest wyłącznie dokumentacją problemu — nie narzędziem zmiany. Każda sesja mapowania musi kończyć się wizją jak proces powinien wyglądać po eliminacji marnotrawstwa.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">09</div>
+      <h4>Dołącz plan działania z właścicielami i terminami</h4>
+      <p>Mapa bez planu działania to dekoracja. Każde zidentyfikowane marnotrawstwo musi mieć przypisanego właściciela, termin realizacji i miarę sukcesu. Bez tego mapa ląduje na ścianie i nic się nie zmienia.</p>
+    </div>
+    <div class="tip-card">
+      <div class="tip-number">10</div>
+      <h4>Weryfikuj — wróć i zmierz po zmianie</h4>
+      <p>Mapowanie to cykl — nie jednorazowe ćwiczenie. Po wdrożeniu zmian wróć do procesu, zmierz rzeczywiste wyniki i porównaj ze stanem docelowym. Jeśli wyniki różnią się od oczekiwań — zrozum dlaczego.</p>
+    </div>
+  </div>
+
+  <!-- KIEDY KTÓRE NARZĘDZIE -->
+  <div style="background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; margin-top: 8px;">
+    <span class="section-label">Drzewko decyzyjne</span>
+    <h3 style="font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 24px; margin-top: 8px; color: #1B0040;">Które narzędzie wybrać?</h3>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; gap: 16px; align-items: flex-start; padding: 16px; background: #EDE0FF; border-radius: var(--radius-sm);">
+        <div style="font-weight: 700; color: #3D0090; font-size: 14px; min-width: 200px;">Chcę zobaczyć gdzie ginie czas i wartość w przepływie produkcji lub usług operacyjnych</div>
+        <div style="font-weight: 700; color: #3D0090; font-size: 18px;">→</div>
+        <div style="font-weight: 700; color: #3D0090;">VSM / Value Stream Mapping</div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-start; padding: 16px; background: #FFE8F3; border-radius: var(--radius-sm);">
+        <div style="font-weight: 700; color: #D4006A; font-size: 14px; min-width: 200px;">Chcę zobaczyć gdzie między rolami giną dokumenty, decyzje i czas w środowisku biurowym</div>
+        <div style="font-weight: 700; color: #D4006A; font-size: 18px;">→</div>
+        <div style="font-weight: 700; color: #D4006A;">Makigami</div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-start; padding: 16px; background: #E0ECFF; border-radius: var(--radius-sm);">
+        <div style="font-weight: 700; color: #1A4899; font-size: 14px; min-width: 200px;">Chcę opisać logikę procesu docelowego dla wdrożenia IT, automatyzacji lub dokumentacji regulacyjnej</div>
+        <div style="font-weight: 700; color: #1A4899; font-size: 18px;">→</div>
+        <div style="font-weight: 700; color: #1A4899;">BPMN 2.0</div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: flex-start; padding: 16px; background: linear-gradient(135deg, #1B0040, #2D0060); border-radius: var(--radius-sm);">
+        <div style="font-weight: 700; color: rgba(255,255,255,0.8); font-size: 14px; min-width: 200px;">Nie wiem po co robię tę mapę</div>
+        <div style="font-weight: 700; color: var(--accent); font-size: 18px;">→</div>
+        <div style="font-weight: 700; color: var(--accent);">Zatrzymaj projekt. Najpierw odpowiedz na pytanie o cel.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB: BIBLIOTEKA ======== -->
+<div class="tab-panel" id="tab-biblioteka">
+  <span class="section-label">Źródła naukowe i badawcze</span>
+  <h2 class="section-title">Biblioteka — weryfikacja wiedzą</h2>
+  <p class="section-intro">Poniższe źródła to wyłącznie publikacje naukowe, badawcze i standardy ISO. Bez firm consultingowych i szkoleniowych. Służą do weryfikowania decyzji o mapowaniu procesów twardymi danymi badawczymi.</p>
+
+  <div class="lib-tabs">
+    <button class="lib-tab active" onclick="showLibTab('vsm-lib', this)">VSM / VSD</button>
+    <button class="lib-tab" onclick="showLibTab('maki-lib', this)">Makigami</button>
+    <button class="lib-tab" onclick="showLibTab('bpmn-lib', this)">BPMN</button>
+    <button class="lib-tab" onclick="showLibTab('lean-lib', this)">Lean & Teoria</button>
+  </div>
+
+  <div class="lib-panel active" id="lib-vsm-lib">
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Learning to See: Value Stream Mapping to Add Value and Eliminate Muda</div>
+      <div class="ref-authors">Rother, M., Shook, J. (1998). Lean Enterprise Institute, Cambridge MA.</div>
+      <div class="ref-desc">Fundamentalne źródło metodyczne VSM. Definiuje symbole, metryki i metodologię tworzenia map stanu obecnego i przyszłego. Obowiązkowe dla każdego kto tworzy lub weryfikuje mapy VSM. Wprowadza rozróżnienie takt time / cycle time oraz pojęcie strumienia wartości end-to-end.</div>
+      <span class="ref-doi">ISBN: 978-0966784305</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Value Stream Mapping: a study about the problems and challenges found in the literature from the past 15 years about application of Lean tools</div>
+      <div class="ref-authors">Dal Forno, A.J., Pereira, F.A., Forcellini, F.A., Kipper, L.M. (2014). International Journal of Advanced Manufacturing Technology, 72(5), 779–790.</div>
+      <div class="ref-desc">Przegląd 15 lat badań nad VSM. Dokumentuje że błędne zastosowanie VSM komplikuje identyfikację marnotrawstwa i prowadzi do błędnych wniosków. Identyfikuje typowe pułapki i ograniczenia metody w różnych środowiskach.</div>
+      <span class="ref-doi">DOI: 10.1007/s00170-014-5712-z</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Application of value stream mapping (VSM) for lean and cycle time reduction in complex production environments: a case study</div>
+      <div class="ref-authors">Seth, D., Seth, N., Dhariwal, P. (2017). Production Planning & Control, 28(5), 398–419.</div>
+      <div class="ref-desc">Badanie empiryczne zastosowania VSM w złożonych środowiskach produkcyjnych. Pokazuje ograniczenia klasycznej metody przy wysokiej zmienności produktów i identyfikuje techniki adaptacji VSM.</div>
+      <span class="ref-doi">DOI: 10.1080/09537287.2017.1300352</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">A tentative integration of value stream mapping (VSM) and BPMN for improved process mapping</div>
+      <div class="ref-authors">Soliman, M., Esteves, O.O., Trevisan, M., Segatto, G.F. (2022). Knowledge and Process Management, 29(4), 371–382.</div>
+      <div class="ref-desc">Kluczowe badanie pokazujące różnice i komplementarność VSM i BPMN. Dowodzi że narzędzia dostarczają różnych, uzupełniających się informacji — żadne nie może zastąpić drugiego. Proponuje podejście hybrydowe dla złożonych środowisk.</div>
+      <span class="ref-doi">DOI: 10.1002/kpm.1729</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Using Process Modelling Tools to Support Lean Management Implementation</div>
+      <div class="ref-authors">Costa, M., Ávila, L. (2025). Management and Production Engineering Review, 16(4), 1–13.</div>
+      <div class="ref-desc">Badanie empiryczne (case study producenta łopat wiatrowych) dokumentujące sekwencję VSM→BPMN w praktyce. VSM jako krok 1 (diagnoza), BPMN jako krok 2 (projektowanie handoffs). Wyniki: redukcja cycle time o 27%, dystans operatora −97%. Jedno z pierwszych badań używających BPMN do modelowania fizycznych procesów operacyjnych.</div>
+      <span class="ref-doi">DOI: 10.24425/mper.2025.157212</span>
+    </div>
+  </div>
+
+  <div class="lib-panel" id="lib-maki-lib">
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">The Complete Lean Enterprise: Value Stream Mapping for Administrative and Office Processes</div>
+      <div class="ref-authors">Keyte, B., Locher, D. (2004). Productivity Press, New York.</div>
+      <div class="ref-desc">Pionierska publikacja o rozszerzeniu VSM na środowisko biurowe — kontekst metodyczny dla Makigami. Wprowadza koncepcję mapowania przepływu informacji i dokumentów z podziałem na role. Definiuje kategorie marnotrawstwa w Lean Office.</div>
+      <span class="ref-doi">ISBN: 978-1563272929</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Comparing the VSM and Makigami tools in a transactional office environment: exploratory research from an Italian manufacturing company</div>
+      <div class="ref-authors">Camuffo, A., Gerli, F. (2021). Total Quality Management & Business Excellence, 33(1–2), 1–18.</div>
+      <div class="ref-desc">Jedyne bezpośrednie badanie naukowe porównujące VSM i Makigami w tym samym środowisku. Wynik: Makigami jest lepszym narzędziem do mapowania procesów transakcyjnych biurowych niż VSM, który wymaga tak znacznych modyfikacji że traci czytelność i wartość diagnostyczną w środowisku nieprodukcyjnym.</div>
+      <span class="ref-doi">DOI: 10.1080/14783363.2020.1807927</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">An evaluation of the value stream mapping tool</div>
+      <div class="ref-authors">Serrano Lasa, I., Ochoa Laburu, C., de Castro Vila, R. (2008). Business Process Management Journal, 14(1), 39–52.</div>
+      <div class="ref-desc">Systematyczna analiza ograniczeń VSM wskazująca na potrzebę narzędzi dedykowanych środowisku biurowemu. Identyfikuje warunki w których VSM traci skuteczność diagnostyczną i wymaga zastąpienia lub uzupełnienia innymi metodami.</div>
+      <span class="ref-doi">DOI: 10.1108/14637150810849391</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Value Stream Management for the Lean Office</div>
+      <div class="ref-authors">Tapping, D., Shuker, T. (2003). Productivity Press, New York.</div>
+      <div class="ref-desc">Podstawowy przewodnik metodyczny zastosowania Lean w środowisku biurowym. Definiuje kategorie marnotrawstwa specyficzne dla pracy biurowej i metody ich identyfikacji przez mapowanie przepływu dokumentów i informacji.</div>
+      <span class="ref-doi">ISBN: 978-1563272622</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Lean Office and Service Simplified: The Definitive How-To Guide</div>
+      <div class="ref-authors">Locher, D. (2011). Productivity Press, New York.</div>
+      <div class="ref-desc">Praktyczny przewodnik wdrożenia Lean Office z naciskiem na mapowanie procesów biurowych i administracyjnych. Zawiera konkretne techniki identyfikacji marnotrawstwa w środowiskach nieprodukcyjnych.</div>
+      <span class="ref-doi">ISBN: 978-1439840535</span>
+    </div>
+  </div>
+
+  <div class="lib-panel" id="lib-bpmn-lib">
+    <div class="ref-item">
+      <span class="ref-type rt-standard">Standard ISO</span>
+      <div class="ref-title">Business Process Model and Notation (BPMN) Version 2.0</div>
+      <div class="ref-authors">Object Management Group (2013). ISO/IEC 19510:2013.</div>
+      <div class="ref-desc">Oficjalny standard BPMN. Definiuje kompletny zestaw symboli, reguł syntaktycznych i semantycznych. Obowiązkowe źródło do weryfikacji poprawności modeli BPMN. Dostępny przez strony ISO i OMG (omg.org).</div>
+      <span class="ref-doi">ISO/IEC 19510:2013</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Fundamentals of Business Process Management</div>
+      <div class="ref-authors">Dumas, M., La Rosa, M., Mendling, J., Reijers, H.A. (2018). 2nd ed. Springer Berlin.</div>
+      <div class="ref-desc">Najbardziej kompleksowy podręcznik akademicki BPMN i BPM. Obejmuje modelowanie, analizę, przeprojektowanie, implementację i monitorowanie procesów. Zawiera szczegółowe omówienie weryfikacji i walidacji modeli — krytyczne dla unikania błędów syntaktycznych i semantycznych.</div>
+      <span class="ref-doi">DOI: 10.1007/978-3-662-56509-4</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Seven process modeling guidelines (7PMG)</div>
+      <div class="ref-authors">Mendling, J., Reijers, H.A., van der Aalst, W.M.P. (2010). Information and Software Technology, 52(2), 127–136.</div>
+      <div class="ref-desc">Kluczowe badanie jakości modeli BPMN. Literatura raportuje 10–20% wskaźnik błędów w przemysłowych kolekcjach modeli. Definiuje 7 praktycznych wytycznych tworzenia czytelnych i poprawnych modeli. Obowiązkowe dla weryfikatorów modeli BPMN.</div>
+      <span class="ref-doi">DOI: 10.1016/j.infsof.2009.08.004</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Analysis of Most Common Process Modelling Mistakes in BPMN Process Models</div>
+      <div class="ref-authors">Rozman, T., Polančič, G., Horvat, R.V. (2007). Proceedings ISD 2007, Springer, Potsdam.</div>
+      <div class="ref-desc">Analiza 2000+ modeli BPMN. Identyfikuje 15 najczęstszych antywzorców — błędów które prowadzą do deadlocks, nieosiągalnych ścieżek i modeli nieczytelnych dla interesariuszy. Błędy semantyczne i pragmatyczne są trudniejsze do wykrycia niż syntaktyczne.</div>
+      <span class="ref-doi">Proceedings ISD 2007, Springer</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Business Process Management: Concepts, Languages, Architectures</div>
+      <div class="ref-authors">Weske, M. (2019). 3rd ed. Springer Berlin.</div>
+      <div class="ref-desc">Kompleksowe omówienie BPM z technicznej perspektywy — cykl życia procesu, architektura systemów BPMS, weryfikacja modeli. Szczególnie wartościowe dla weryfikacji decyzji o automatyzacji procesów na podstawie modeli BPMN.</div>
+      <span class="ref-doi">DOI: 10.1007/978-3-662-59432-2</span>
+    </div>
+  </div>
+
+  <div class="lib-panel" id="lib-lean-lib">
+    <div class="ref-item">
+      <span class="ref-type rt-book">Książka</span>
+      <div class="ref-title">Lean Thinking: Banish Waste and Create Wealth in Your Corporation</div>
+      <div class="ref-authors">Womack, J.P., Jones, D.T. (2003). 2nd ed. Free Press, New York.</div>
+      <div class="ref-desc">Fundamentalne źródło filozofii Lean. Definiuje pięć zasad Lean (wartość, strumień wartości, przepływ, ssanie, doskonalenie) i wprowadza pojęcie strumienia wartości jako centralnego obiektu analizy. Kontekst teoretyczny dla wszystkich metod mapowania procesów.</div>
+      <span class="ref-doi">ISBN: 978-0743249270</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">A Systematic Literature Review of Lean Manufacturing Implementation in Manufacturing-Based Sectors of the Developing and Developed Countries</div>
+      <div class="ref-authors">Maware, C., Okwu, M.O., Adetunji, O. (2022). International Journal of Lean Six Sigma, 13(3), 521–556.</div>
+      <div class="ref-desc">Systematyczny przegląd literatury dokumentujący że firmy produkcyjne często losowo adoptują narzędzia Lean — co prowadzi do niepowodzeń wdrożeniowych. Wskazuje na brak refleksji nad adekwatnością narzędzia do kontekstu jako główną przyczynę nieudanych projektów Lean.</div>
+      <span class="ref-doi">DOI: 10.1108/IJLSS-12-2020-0223</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Lean practices and their effect on performance: a literature review</div>
+      <div class="ref-authors">Negrão, L.L.L., Godinho Filho, M., Marodin, G. (2017). Production Planning & Control, 28(1), 33–56.</div>
+      <div class="ref-desc">Przegląd badań nad efektami praktyk Lean. Kluczowy wniosek: przed wdrożeniem Lean organizacje muszą najpierw przeprojektować procesy, uzgodnić narzędzia, przeszkolić pracowników i przydzielić odpowiedzialności. Brak tych kroków koreluje z niepowodzeniem wdrożenia.</div>
+      <span class="ref-doi">DOI: 10.1080/09537287.2016.1231853</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">Similarities and Differences between Business Process Management and Lean Management</div>
+      <div class="ref-authors">Maldonado, M.U., Matheus, E.L., Bernardes, T.C., Rodrigues Vaz, C. (2020). Business Process Management Journal, 26(7), 1807–1831.</div>
+      <div class="ref-desc">Systematyczna analiza różnic i podobieństw między BPM a Lean. Dokumentuje że BPM i Lean to dwa różne paradygmaty zarządzania procesami — połączenie wymaga świadomości tych różnic i celowego doboru narzędzi. Kluczowe dla uzasadnienia dlaczego BPMN nie zastępuje VSM ani Makigami.</div>
+      <span class="ref-doi">DOI: 10.1108/BPMJ-09-2019-0368</span>
+    </div>
+
+    <div class="ref-item">
+      <span class="ref-type rt-article">Artykuł</span>
+      <div class="ref-title">A Systematic Review of Lean Implementation Frameworks and Roadmaps</div>
+      <div class="ref-authors">Mamoojee-Khatib, H., Antony, J., Teeroovengadum, V. et al. (2023). TQM Journal.</div>
+      <div class="ref-desc">Systematyczny przegląd ram wdrożenia Lean. Dokumentuje że firmy ignorują korzyści z integracji różnych metodologii doskonalenia procesów — stosując wyłącznie tradycyjne narzędzia Lean bez refleksji nad ich adekwatnością do kontekstu.</div>
+      <span class="ref-doi">DOI: 10.1108/TQM-09-2023-0280</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======== TAB: FAQ ======== -->
+<div class="tab-panel" id="tab-faq">
+  <span class="section-label">Najczęstsze pytania</span>
+  <h2 class="section-title">FAQ — odpowiedzi praktyka</h2>
+  <p class="section-intro">Pytania które najczęściej pojawiają się w organizacjach wdrażających mapowanie procesów. Odpowiedzi oparte na badaniach naukowych i doświadczeniu praktycznym.</p>
+
+  <div class="faq-list">
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Mamy już mapę BPMN procesu — czy możemy na jej podstawie wdrożyć automatyzację?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>To zależy od tego co ta mapa BPMN opisuje. Jeśli jest to mapa stanu obecnego (as-is) — prawdopodobnie opisuje istniejące problemy, silosy i marnotrawstwo. Automatyzowanie takiego procesu da szybszy zły wynik.</p>
+        <p>Przed automatyzacją konieczna jest analiza wartości — najlepiej VSM lub Makigami — żeby zidentyfikować i wyeliminować marnotrawstwo. Dopiero wtedy BPMN opisujący stan docelowy (to-be) może być podstawą automatyzacji.</p>
+        <p>Badanie Costa i Ávila (2025) dokumentuje tę sekwencję w praktyce: VSM jako diagnoza, BPMN jako projekt rozwiązania.</p>
+        <div class="source">Źródło: Costa, Ávila (2025), DOI: 10.24425/mper.2025.157212</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Czy VSM można stosować do procesów biurowych i administracyjnych?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>Tak, ale z poważnymi modyfikacjami — i często lepszym wyborem jest Makigami. Badanie Camuffo i Gerli (2021) — jedyne bezpośrednie porównanie obu narzędzi w tym samym środowisku — wykazało, że VSM zastosowane do procesów biurowych wymaga tak znacznych modyfikacji że traci czytelność i wartość diagnostyczną.</p>
+        <p>Makigami była zaprojektowana specjalnie dla środowisk biurowych i transakcyjnych — śledzi przepływ dokumentów i decyzji między rolami w osi czasu, z wyraźnym zaznaczeniem handoffs i czasu oczekiwania. W środowisku biurowym jest narzędziem pierwszego wyboru.</p>
+        <p>VSM w środowisku biurowym warto stosować gdy chcesz zmierzyć ogólny lead time i WIP procesu o charakterze usługowym — nie gdy chcesz zrozumieć kto co robi i gdzie giną dokumenty.</p>
+        <div class="source">Źródło: Camuffo, Gerli (2021), DOI: 10.1080/14783363.2020.1807927</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Czym różni się takt time od cycle time? To częste źródło nieporozumień.
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p><strong>Takt time</strong> pochodzi od klienta — jest miarą popytu. Oblicza się go jako: dostępny czas pracy w danym okresie / popyt klienta w tym samym okresie. Przykład: pracujemy 450 minut dziennie, klient zamawia 90 sztuk dziennie → takt time = 5 minut/sztukę. Takt time to rytm w jakim musi pracować cały system żeby spełnić popyt.</p>
+        <p><strong>Cycle time</strong> pochodzi z procesu — jest miarą wydajności danej stacji. To rzeczywisty czas jaki zajmuje wykonanie jednej jednostki na danym stanowisku, zmierzony stoperem.</p>
+        <p>Gdy cycle time > takt time — stacja jest wąskim gardłem i nie jest w stanie spełnić popytu klienta. Gdy cycle time < takt time — stacja produkuje szybciej niż potrzeba, co może prowadzić do nadprodukcji.</p>
+        <p>Mylenie tych dwóch wartości w projektowaniu future state VSM prowadzi do błędnych decyzji o alokacji zasobów — to jeden z najczęstszych błędów praktycznych.</p>
+        <div class="source">Źródło: Rother, Shook (1998), Learning to See, Lean Enterprise Institute</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Jak przekonać zarząd że mapa BPMN nie wystarczy do usprawnienia procesów?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>Najskuteczniejszy argument to pytanie o cel: co chcemy osiągnąć? Jeśli celem jest eliminacja marnotrawstwa, skrócenie lead time lub poprawa jakości — BPMN nie mierzy żadnej z tych rzeczy. BPMN opisuje logikę procesu — nie jego efektywność.</p>
+        <p>Poproś o pokazanie gdzie na mapie BPMN widać: czas oczekiwania między etapami, proporcję wartości dodanej do całkowitego lead time, poziomy WIP między stacjami. Jeśli tych danych nie ma — mapa nie może być podstawą decyzji o usprawnieniu.</p>
+        <p>Argument badawczy: analiza Soliman et al. (2022) dokumentuje że VSM i BPMN dostarczają komplementarnych — nie zamiennych — informacji. Firma która używa tylko BPMN ma niepełny obraz procesu.</p>
+        <div class="source">Źródło: Soliman et al. (2022), DOI: 10.1002/kpm.1729</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Ile czasu powinno zajmować mapowanie procesu VSM?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>Nie ma jednej odpowiedzi — zależy od złożoności procesu i dostępności danych. W praktyce Lean typowe mapowanie VSM jednego strumienia wartości to 2–5 dni roboczych: 1–2 dni na zbieranie danych i obserwacje (Gemba Walk), 1 dzień na tworzenie mapy stanu obecnego z zespołem, 1–2 dni na analizę i projektowanie stanu docelowego.</p>
+        <p>Ostrzeżenie: mapowanie które zajmuje kilka godzin przy biurku bez danych z obserwacji nie jest VSM — jest schematem blokowym. Danych nie da się zebrać szybciej niż pozwala rzeczywistość procesu.</p>
+        <p>Mapa jest gotowa gdy: wszystkie data boxes są wypełnione zmierzonymi danymi, zespół (w tym operatorzy) potwierdza że mapa odzwierciedla rzeczywistość, obliczony jest value-added ratio i zidentyfikowane są wąskie gardła.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Firma wdrożyła ERP na podstawie map BPMN i system nie działa. Co poszło nie tak?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>To jeden z najczęstszych scenariuszy w projektach wdrożeń IT. Możliwe przyczyny to: (1) mapy BPMN opisywały stan obecny (as-is) pełen marnotrawstwa i problemów — które zostały zdigitalizowane zamiast wyeliminowane; (2) mapy były tworzone bez zaangażowania osób wykonujących pracę — opisywały wyobrażenia, nie rzeczywistość; (3) modele BPMN zawierały błędy semantyczne (deadlocks, nieosiągalne ścieżki) niewidoczne bez walidacji behawioralnej.</p>
+        <p>Co teraz: wykonaj VSM lub Makigami rzeczywistego procesu jak jest — zidentyfikuj gdzie leżą problemy. Zaprojektuj stan docelowy po eliminacji marnotrawstwa. Dopiero wtedy zaktualizuj modele BPMN i konfigurację systemu.</p>
+        <p>Analiza Rozman et al. (2007) dokumentuje że błędy w modelach BPMN bezpośrednio przekładają się na błędy w systemach informatycznych wdrożonych na ich podstawie.</p>
+        <div class="source">Źródło: Rozman et al. (2007), Proceedings ISD 2007, Springer</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Czy Makigami i VSM można stosować razem dla tego samego procesu?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>Tak — i to może być bardzo wartościowe podejście, szczególnie dla procesów które mają zarówno część operacyjną (produkcyjną lub usługową) jak i część administracyjną (zamówienia, dokumentacja, zatwierdzenia).</p>
+        <p>Praktyczna sekwencja: VSM dla przepływu fizycznego lub operacyjnego (żeby zobaczyć takt time, cycle time, WIP i ogólny lead time), Makigami dla przepływu administracyjnego towarzyszącego temu procesowi (żeby zobaczyć gdzie dokumenty i decyzje powodują opóźnienia). Połączenie daje pełny obraz.</p>
+        <p>Badanie Camuffo i Gerli (2021) wskazuje, że narzędzia mogą być integrowane — ale muszą być stosowane do właściwych części procesu, nie wymiennie.</p>
+        <div class="source">Źródło: Camuffo, Gerli (2021), DOI: 10.1080/14783363.2020.1807927</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Jak udowodnić wyniki mapowania procesów — jakich miar używać?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>Kluczowe miary dla VSM: Lead time (przed i po), Cycle time na kluczowych stacjach, Value-added ratio (%), WIP między etapami, liczba przeróbek i defektów. Wszystkie mierzone przed mapowaniem (current state) i po wdrożeniu zmian (future state verification).</p>
+        <p>Kluczowe miary dla Makigami: Czas przetwarzania vs czas oczekiwania (przed/po), liczba handoffs (przed/po), liczba osób dotykaących dokumentu, czas od złożenia do realizacji wniosku/dokumentu.</p>
+        <p>Ważne: miary muszą być zbierane przed i po, w porównywalnych warunkach. Bez pomiaru stanu wyjściowego nie ma możliwości udowodnienia poprawy. To jest najczęstszy błąd w projektach — mapowanie bez baseline measurement.</p>
+        <p>Przykład z badań: Costa i Ávila (2025) dokumentują redukcje cycle time o 27%, 7% i 20% na trzech stacjach — dzięki VSM który dostarczył baseline i future state VSM który był benchmarkiem po wdrożeniu.</p>
+        <div class="source">Źródło: Costa, Ávila (2025), DOI: 10.24425/mper.2025.157212</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">
+        Jakie są ograniczenia VSM których nie warto ignorować?
+        <div class="faq-icon">+</div>
+      </button>
+      <div class="faq-a">
+        <p>VSM ma kilka istotnych ograniczeń strukturalnych: (1) nie radzi sobie z procesami o wysokiej zmienności produktów lub krótkich seriach — klasyczna metoda zakłada powtarzalność; (2) nie pokazuje marnotrawstwa wewnątrz stacji — widzi je jako czarną skrzynkę; (3) trudno stosować do procesów nielinearnych, projektowych lub kreatywnych; (4) nie opisuje reguł decyzyjnych ani warunków rozgałęzień — do tego potrzebny jest BPMN.</p>
+        <p>Przegląd Dal Forno et al. (2014) — 15 lat badań nad VSM — dokumentuje że błędne stosowanie VSM w nieodpowiednich kontekstach prowadzi do misidentyfikacji problemów i błędnych wniosków. Wybór narzędzia musi być świadomy.</p>
+        <div class="source">Źródło: Dal Forno et al. (2014), DOI: 10.1007/s00170-014-5712-z</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <strong>Mapowanie Procesów — Przewodnik praktyka Lean</strong><br>
+  Materiał edukacyjny oparty na źródłach naukowych i badaniach empirycznych.<br>
+  Wszystkie cytowane badania to recenzowane publikacje naukowe — bez firm consultingowych i szkoleniowych.
+</footer>
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function filterErrors(tag, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.error-item').forEach(item => {
+    if (tag === 'all') {
+      item.classList.remove('hidden');
+    } else {
+      const tags = item.dataset.tags || '';
+      if (tags.includes(tag)) {
+        item.classList.remove('hidden');
+      } else {
+        item.classList.add('hidden');
+      }
+    }
+  });
+}
+
+function showLibTab(id, btn) {
+  document.querySelectorAll('.lib-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.lib-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleFaq(btn) {
+  const item = btn.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>
